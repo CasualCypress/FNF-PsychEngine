@@ -3,7 +3,7 @@ package;
 import animateatlas.AtlasFrameMaker;
 import flixel.FlxG;
 import flixel.FlxSprite;
-import flixel.addons.effects.FlxTrail;
+import flixel.util.FlxColor;
 import flixel.animation.FlxBaseAnimation;
 import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.tweens.FlxTween;
@@ -29,6 +29,9 @@ typedef CharacterFile = {
 
 	var position:Array<Float>;
 	var camera_position:Array<Float>;
+	
+	var playerPosition:Array<Float>;
+	var playerCamera_position:Array<Float>;
 
 	var flip_x:Bool;
 	var no_antialiasing:Bool;
@@ -42,6 +45,7 @@ typedef AnimArray = {
 	var loop:Bool;
 	var indices:Array<Int>;
 	var offsets:Array<Int>;
+	var playerOffsets:Array<Int>;
 }
 
 class Character extends FlxSprite
@@ -50,7 +54,12 @@ class Character extends FlxSprite
 	public var debugMode:Bool = false;
 
 	public var isPlayer:Bool = false;
-	public var curCharacter:String = DEFAULT_CHARACTER;
+	public var curCharacter:String = 'lol';
+	public var isCustom:Bool = false;
+	public var danceIdle:Bool = false; //Character use "danceLeft" and "danceRight" instead of "idle" "-- why didn't i think of this?"
+	
+	public var iconColor:String;
+	public var trailColor:String;
 
 	public var colorTween:FlxTween;
 	public var holdTimer:Float = 0;
@@ -60,14 +69,15 @@ class Character extends FlxSprite
 	public var stunned:Bool = false;
 	public var singDuration:Float = 4; //Multiplier of how long a character holds the sing pose
 	public var idleSuffix:String = '';
-	public var danceIdle:Bool = false; //Character use "danceLeft" and "danceRight" instead of "idle"
-	
 
 	public var healthIcon:String = 'face';
 	public var animationsArray:Array<AnimArray> = [];
 
 	public var positionArray:Array<Float> = [0, 0];
 	public var cameraPosition:Array<Float> = [0, 0];
+
+	public var playerPositionArray:Array<Float> = [0, 0];
+	public var playerCameraPosition:Array<Float> = [0, 0];
 
 	public var hasMissAnimations:Bool = false;
 
@@ -78,8 +88,11 @@ class Character extends FlxSprite
 	public var originalFlipX:Bool = false;
 	public var healthColorArray:Array<Int> = [255, 0, 0];
 
-	public static var DEFAULT_CHARACTER:String = 'bf'; //In case a character is missing, it will use BF on its place
-	public function new(x:Float, y:Float, ?character:String = 'bf', ?isPlayer:Bool = false)
+	public static var colorPreString:FlxColor;
+	public static var colorPreCut:String; 
+
+	public static var DEFAULT_CHARACTER:String = 'lol'; //In case a character is missing, it will use BF on its place
+	public function new(x:Float, y:Float, ?character:String = 'lol', ?isPlayer:Bool = false)
 	{
 		super(x, y);
 
@@ -196,7 +209,10 @@ class Character extends FlxSprite
 				positionArray = json.position;
 				cameraPosition = json.camera_position;
 
-				healthIcon = json.healthicon;
+				playerPositionArray = json.playerPosition;
+				playerCameraPosition = json.playerCamera_position;
+
+
 				singDuration = json.sing_duration;
 				flipX = !!json.flip_x;
 				if(json.no_antialiasing) {
@@ -207,8 +223,15 @@ class Character extends FlxSprite
 				if(json.healthbar_colors != null && json.healthbar_colors.length > 2)
 					healthColorArray = json.healthbar_colors;
 
+				//cuz the way bar colors are calculated here is like in B&B
+				colorPreString = FlxColor.fromRGB(healthColorArray[0], healthColorArray[1], healthColorArray[2]);
+				colorPreCut = colorPreString.toHexString();
+
+				trace(colorPreCut);
+
+				iconColor = colorPreCut.substring(2);
+
 				antialiasing = !noAntialiasing;
-				if(!ClientPrefs.globalAntialiasing) antialiasing = false;
 
 				animationsArray = json.animations;
 				if(animationsArray != null && animationsArray.length > 0) {
@@ -222,16 +245,28 @@ class Character extends FlxSprite
 							animation.addByIndices(animAnim, animName, animIndices, "", animFps, animLoop);
 						} else {
 							animation.addByPrefix(animAnim, animName, animFps, animLoop);
+							trace('added '+animAnim+' animation');
 						}
 
-						if(anim.offsets != null && anim.offsets.length > 1) {
-							addOffset(anim.anim, anim.offsets[0], anim.offsets[1]);
+						if (isPlayer)
+						{
+							if(anim.playerOffsets != null && anim.playerOffsets.length > 1) {
+								addOffset(anim.anim, anim.playerOffsets[0], anim.playerOffsets[1]);
+							}
+							else if(anim.offsets != null && anim.offsets.length > 1) {
+								addOffset(anim.anim, anim.offsets[0], anim.offsets[1]);
+							}
+						}
+						else
+						{
+							if(anim.offsets != null && anim.offsets.length > 1) {
+								addOffset(anim.anim, anim.offsets[0], anim.offsets[1]);
+							}
 						}
 					}
 				} else {
-					quickAnimAdd('idle', 'BF idle dance');
+					animation.addByPrefix('idle', 'BF idle dance', 24, false);
 				}
-				//trace('Loaded file to character ' + curCharacter);
 		}
 		originalFlipX = flipX;
 
@@ -240,30 +275,37 @@ class Character extends FlxSprite
 		dance();
 
 		if (isPlayer)
-		{
-			flipX = !flipX;
-
-			/*// Doesn't flip for BF, since his are already in the right place???
-			if (!curCharacter.startsWith('bf'))
 			{
-				// var animArray
-				if(animation.getByName('singLEFT') != null && animation.getByName('singRIGHT') != null)
+				flipX = !flipX;
+	
+				// Doesn't flip for BF, since his are already in the right place???
+				if (!curCharacter.startsWith('lol'))
 				{
-					var oldRight = animation.getByName('singRIGHT').frames;
-					animation.getByName('singRIGHT').frames = animation.getByName('singLEFT').frames;
-					animation.getByName('singLEFT').frames = oldRight;
+					// var animArray
+					if(animation.getByName('singLEFT') != null && animation.getByName('singRIGHT') != null)
+					{
+						var oldRight = animation.getByName('singRIGHT').frames;
+						animation.getByName('singRIGHT').frames = animation.getByName('singLEFT').frames;
+						animation.getByName('singLEFT').frames = oldRight;
+					}
+	
+					// IF THEY HAVE MISS ANIMATIONS??
+					if (animation.getByName('singLEFTmiss') != null && animation.getByName('singRIGHTmiss') != null)
+					{
+						var oldMiss = animation.getByName('singRIGHTmiss').frames;
+						animation.getByName('singRIGHTmiss').frames = animation.getByName('singLEFTmiss').frames;
+						animation.getByName('singLEFTmiss').frames = oldMiss;
+					}
+					// MISS ALT SHIT LOLZ
+					if (animation.getByName('singLEFTmiss-alt') != null && animation.getByName('singRIGHTmiss-alt') != null)
+					{
+						var oldMissAlt = animation.getByName('singRIGHTmiss-alt').frames;
+						animation.getByName('singRIGHTmiss-alt').frames = animation.getByName('singLEFTmiss-alt').frames;
+						animation.getByName('singLEFTmiss-alt').frames = oldMissAlt;
+					}
 				}
-
-				// IF THEY HAVE MISS ANIMATIONS??
-				if (animation.getByName('singLEFTmiss') != null && animation.getByName('singRIGHTmiss') != null)
-				{
-					var oldMiss = animation.getByName('singRIGHTmiss').frames;
-					animation.getByName('singRIGHTmiss').frames = animation.getByName('singLEFTmiss').frames;
-					animation.getByName('singLEFTmiss').frames = oldMiss;
-				}
-			}*/
+			}
 		}
-	}
 
 	override function update(elapsed:Float)
 	{
