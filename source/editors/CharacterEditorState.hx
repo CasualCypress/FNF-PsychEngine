@@ -262,7 +262,7 @@ class CharacterEditorState extends MusicBeatState
 			var bg:BGSprite = new BGSprite('stageback', -600 + OFFSET_X - playerXDifference, -300, 0.9, 0.9);
 			bgLayer.add(bg);
 
-			var stageFront:BGSprite = new BGSprite('stagefront', -650 + OFFSET_X - playerXDifference, 500, 0.9, 0.9);
+			var stageFront:BGSprite = new BGSprite('stagefrontoffsetting', -650 + OFFSET_X - playerXDifference, 500, 0.9, 0.9);
 			stageFront.setGraphicSize(Std.int(stageFront.width * 1.1));
 			stageFront.updateHitbox();
 			bgLayer.add(stageFront);
@@ -330,83 +330,111 @@ class CharacterEditorState extends MusicBeatState
 	}*/
 
 	var TemplateCharacter:String = '{
-			"animations": [
-				{
-					"loop": false,
-					"offsets": [
-						0,
-						0
-					],
-					"fps": 24,
-					"anim": "idle",
-					"indices": [],
-					"name": "Dad idle dance"
-				},
-				{
-					"offsets": [
-						0,
-						0
-					],
-					"indices": [],
-					"fps": 24,
-					"anim": "singLEFT",
-					"loop": false,
-					"name": "Dad Sing Note LEFT"
-				},
-				{
-					"offsets": [
-						0,
-						0
-					],
-					"indices": [],
-					"fps": 24,
-					"anim": "singDOWN",
-					"loop": false,
-					"name": "Dad Sing Note DOWN"
-				},
-				{
-					"offsets": [
-						0,
-						0
-					],
-					"indices": [],
-					"fps": 24,
-					"anim": "singUP",
-					"loop": false,
-					"name": "Dad Sing Note UP"
-				},
-				{
-					"offsets": [
-						0,
-						0
-					],
-					"indices": [],
-					"fps": 24,
-					"anim": "singRIGHT",
-					"loop": false,
-					"name": "Dad Sing Note RIGHT"
-				}
-			],
-			"no_antialiasing": false,
-			"image": "characters/DADDY_DEAREST",
-			"position": [
-				0,
-				0
-			],
-			"healthicon": "face",
-			"flip_x": false,
-			"healthbar_colors": [
-				161,
-				161,
-				161
-			],
-			"camera_position": [
-				0,
-				0
-			],
-			"sing_duration": 6.1,
-			"scale": 1
-		}';
+		"animations": [
+			{
+				"loop": false,
+				"playerOffsets": [
+					0,
+					0
+				],
+				"offsets": [
+					0,
+					0
+				],
+				"fps": 24,
+				"anim": "idle",
+				"indices": [],
+				"name": "Dad idle dance"
+			},
+			{
+				"playerOffsets": [
+					0,
+					0
+				],
+				"offsets": [
+					0,
+					0
+				],
+				"indices": [],
+				"fps": 24,
+				"anim": "singLEFT",
+				"loop": false,
+				"name": "Dad Sing Note LEFT"
+			},
+			{
+				"playerOffsets": [
+					0,
+					0
+				],
+				"offsets": [
+					0,
+					0
+				],
+				"indices": [],
+				"fps": 24,
+				"anim": "singDOWN",
+				"loop": false,
+				"name": "Dad Sing Note DOWN"
+			},
+			{
+				"playerOffsets": [
+					0,
+					0
+				],
+				"offsets": [
+					0,
+					0
+				],
+				"indices": [],
+				"fps": 24,
+				"anim": "singUP",
+				"loop": false,
+				"name": "Dad Sing Note UP"
+			},
+			{
+				"playerOffsets": [
+					0,
+					0
+				],
+				"offsets": [
+					0,
+					0
+				],
+				"indices": [],
+				"fps": 24,
+				"anim": "singRIGHT",
+				"loop": false,
+				"name": "Dad Sing Note RIGHT"
+			}
+		],
+		"no_antialiasing": false,
+		"image": "characters/DADDY_DEAREST",
+		"playerPosition": [
+			0,
+			0
+		],
+		"position": [
+			0,
+			0
+		],
+		"healthicon": "face",
+		"flip_x": false,
+		"healthbar_colors": [
+			161,
+			161,
+			161
+		],
+		"playerCamera_position": [
+			0,
+			0
+		],
+		"camera_position": [
+			0,
+			0
+		],
+		"sing_duration": 6.1,
+		"scale": 1
+	}';
 
 	var charDropDown:FlxUIDropDownMenuCustom;
 	function addSettingsUI() {
@@ -422,6 +450,8 @@ class CharacterEditorState extends MusicBeatState
 			updatePointerPos();
 			reloadBGs();
 			ghostChar.flipX = char.flipX;
+			
+			
 		};
 
 		charDropDown = new FlxUIDropDownMenuCustom(10, 30, FlxUIDropDownMenuCustom.makeStrIdLabelArray([''], true), function(character:String)
@@ -460,6 +490,8 @@ class CharacterEditorState extends MusicBeatState
 				character.singDuration = parsedJson.sing_duration;
 				character.positionArray = parsedJson.position;
 				character.cameraPosition = parsedJson.camera_position;
+				character.playerPositionArray = parsedJson.playerPosition;
+				character.playerCameraPosition = parsedJson.playerCamera_position;
 				
 				character.imageFile = parsedJson.image;
 				character.jsonScale = parsedJson.scale;
@@ -498,6 +530,10 @@ class CharacterEditorState extends MusicBeatState
 	var positionYStepper:FlxUINumericStepper;
 	var positionCameraXStepper:FlxUINumericStepper;
 	var positionCameraYStepper:FlxUINumericStepper;
+	var playerPositionXStepper:FlxUINumericStepper;
+	var playerPositionYStepper:FlxUINumericStepper;
+	var playerPositionCameraXStepper:FlxUINumericStepper;
+	var playerPositionCameraYStepper:FlxUINumericStepper;
 
 	var flipXCheckBox:FlxUICheckBox;
 	var noAntialiasingCheckBox:FlxUICheckBox;
@@ -564,6 +600,12 @@ class CharacterEditorState extends MusicBeatState
 		positionCameraXStepper = new FlxUINumericStepper(positionXStepper.x, positionXStepper.y + 40, 10, char.cameraPosition[0], -9000, 9000, 0);
 		positionCameraYStepper = new FlxUINumericStepper(positionYStepper.x, positionYStepper.y + 40, 10, char.cameraPosition[1], -9000, 9000, 0);
 
+		playerPositionXStepper = new FlxUINumericStepper(flipXCheckBox.x + 110, flipXCheckBox.y, 10, char.positionArray[0], -9000, 9000, 0);
+		playerPositionYStepper = new FlxUINumericStepper(positionXStepper.x + 60, positionXStepper.y, 10, char.positionArray[1], -9000, 9000, 0);
+		
+		playerPositionCameraXStepper = new FlxUINumericStepper(positionXStepper.x, positionXStepper.y + 40, 10, char.cameraPosition[0], -9000, 9000, 0);
+		playerPositionCameraYStepper = new FlxUINumericStepper(positionYStepper.x, positionYStepper.y + 40, 10, char.cameraPosition[1], -9000, 9000, 0);
+
 		var saveCharacterButton:FlxButton = new FlxButton(reloadImage.x, noAntialiasingCheckBox.y + 40, "Save Character", function() {
 			saveCharacter();
 		});
@@ -578,6 +620,8 @@ class CharacterEditorState extends MusicBeatState
 		tab_group.add(new FlxText(15, scaleStepper.y - 18, 0, 'Scale:'));
 		tab_group.add(new FlxText(positionXStepper.x, positionXStepper.y - 18, 0, 'Character X/Y:'));
 		tab_group.add(new FlxText(positionCameraXStepper.x, positionCameraXStepper.y - 18, 0, 'Camera X/Y:'));
+		tab_group.add(new FlxText(playerPositionXStepper.x, positionXStepper.y - 18, 0, 'Character X/Y:'));
+		tab_group.add(new FlxText(playerPositionCameraXStepper.x, positionCameraXStepper.y - 18, 0, 'Camera X/Y:'));
 		tab_group.add(new FlxText(healthColorStepperR.x, healthColorStepperR.y - 18, 0, 'Health bar R/G/B:'));
 		tab_group.add(imageInputText);
 		tab_group.add(reloadImage);
@@ -591,6 +635,10 @@ class CharacterEditorState extends MusicBeatState
 		tab_group.add(positionYStepper);
 		tab_group.add(positionCameraXStepper);
 		tab_group.add(positionCameraYStepper);
+		tab_group.add(playerPositionXStepper);
+		tab_group.add(playerPositionYStepper);
+		tab_group.add(playerPositionCameraXStepper);
+		tab_group.add(playerPositionCameraYStepper);
 		tab_group.add(healthColorStepperR);
 		tab_group.add(healthColorStepperG);
 		tab_group.add(healthColorStepperB);
@@ -672,7 +720,8 @@ class CharacterEditorState extends MusicBeatState
 				fps: Math.round(animationNameFramerate.value),
 				loop: animationLoopCheckBox.checked,
 				indices: indices,
-				offsets: lastOffsets
+				offsets: lastOffsets,
+				playerOffsets: lastOffsets
 			};
 			if(indices != null && indices.length > 0) {
 				char.animation.addByIndices(newAnim.anim, newAnim.name, newAnim.indices, "", newAnim.fps, newAnim.loop);
@@ -800,6 +849,28 @@ class CharacterEditorState extends MusicBeatState
 			else if(sender == positionCameraYStepper)
 			{
 				char.cameraPosition[1] = positionCameraYStepper.value;
+				updatePointerPos();
+			}
+			else if(sender == playerPositionXStepper)
+			{
+				char.positionArray[0] = playerPositionXStepper.value;
+				char.x = char.positionArray[0] + OFFSET_X + 100;
+				updatePointerPos();
+			}
+			else if(sender == playerPositionYStepper)
+			{
+				char.positionArray[1] = playerPositionYStepper.value;
+				char.y = char.positionArray[1];
+				updatePointerPos();
+			}
+			else if(sender == playerPositionCameraXStepper)
+			{
+				char.cameraPosition[0] = playerPositionCameraXStepper.value;
+				updatePointerPos();
+			}
+			else if(sender == playerPositionCameraYStepper)
+			{
+				char.cameraPosition[1] = playerPositionCameraYStepper.value;
 				updatePointerPos();
 			}
 			else if(sender == healthColorStepperR)
